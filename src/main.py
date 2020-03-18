@@ -1,0 +1,112 @@
+from enoslib.api import play_on, discover_networks
+from enoslib.infra.enos_g5k.provider import G5k
+from enoslib.infra.enos_g5k.configuration import (Configuration,
+                                                  NetworkConfiguration)
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+
+
+CLUSTER = "econome"
+SITE = "nantes"
+
+conf = Configuration.from_settings(job_type='allow_classic_ssh',
+                                   job_name='working-boxes',
+                                   walltime='02:00:00')
+network = NetworkConfiguration(id='n1',
+                               type='prod',
+                               roles=['my_network'],
+                               site=SITE)
+conf.add_network_conf(network)\
+    .add_machine(roles=['collector'],
+                 cluster=CLUSTER,
+                 nodes=1,
+                 primary_network=network)\
+    .add_machine(roles=['front', 'sensored', 'working', 'A', 'B', 'C', 'D'],
+                 cluster=CLUSTER,
+                 nodes=1,
+                 primary_network=network)\
+    .finalize()
+                 
+
+
+boxes = {
+    'A': Box('1000'), # 1 second 
+    'B': Box('1000,100'), # 1 + 0.1*x seconds
+    'C': Box('1000,0,10'), # 1 + 0.01*x seconds
+    'D': Box('5000') # 5 seconds
+}
+
+boxes['A'].add([(boxes['B'], 50), (boxes['C'], 50)])
+boxes['B'].add([(boxes['D'], 90)])
+
+
+
+provider = G5k(conf)
+roles, networks = provider.init()
+
+roles = discover_network(roles, networks)
+
+## #A deploy jaeger, for now, we set up with all in one
+with play_on(pattern_hosts='collector', roles=roles) as p:
+    p.docker_container(
+        display_name=f'Installing jaeger…',
+        name='jaeger',
+        image='jaegertracing/all-in-one:1.17',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=['5775:5775/udp',
+                         '6831:6831/udp',
+                         '6832:6832/udp',
+                         '5778:5778',
+                         '16686:16686',
+                         '14268:14268',
+                         '14250:14250',
+                         '9411:9411'],
+        env={
+            'COLLECTOR_ZIPKIN_HTTP_PORT': '9441'
+        }
+    )
+
+## #B deploy envoy proxy, just here to create the appropriate id
+with play_on(pattern_hosts='front', roles=roles) as p:
+    p.docker_container(
+        display_name=f'Installing front envoy…',
+        name='envoy',
+        image='front-envoy:latest',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=['80:80'],
+        env={
+            ## (TODO) set in yaml file, how to change this?
+            ## jaeger address
+            ## first front box address
+        },
+    )
+
+## #C deploy working boxes
+with play_on(pattern='working', roles=roles) as p:
+    p.docker_image(name='meow-world',
+                   tag='latest',
+                   load_path='/home/brnedelec/working-box_latest.tar')
+
+for box_name, box in boxes.items():
+    with play_on(pattern_hosts=box_name, roles=roles) as p:
+        p.docker_container(
+            display_name=f'Installing box {box_name} service…',
+            name=f'{box.name}-{{inventory_hostname_short}}',
+            image='working-box:latest',
+            detach=True, network_mode='host', state='started',
+            recreate=True,
+            published_ports=[f'box.port:box.port'],
+            env={
+                'JAEGER_ENDPOINT': 'http://{JAEGER_URL}/api/traces', ## (TODO)
+                'SPRING_APPLICATION_NAME': f'{box.name}',
+                'SERVER_PORT': f{'box.port'},
+                'BOX_POLYNOME_COEFFICIENTS': f{'box.polynome'},
+                'BOX_REMOTE_CALLS': f{'box.remotes,'} ## (TODO)
+            },
+        )
+
+        
