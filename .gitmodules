@@ -1,3 +1,6 @@
 [submodule "emissary"]
 	path = emissary
 	url = https://github.com/chat-wane/emissary
+[submodule "src/energyservice"]
+	path = src/energyservice
+	url = https://github.com/chat-wane/energyservice

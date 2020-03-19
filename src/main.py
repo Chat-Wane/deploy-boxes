@@ -4,8 +4,8 @@ from enoslib.infra.enos_g5k.provider import G5k
 from enoslib.infra.enos_g5k.configuration import (Configuration,
                                                   NetworkConfiguration)
 from utils import _get_address
-
 from box import Box
+from energyservice.energy import Energy
 
 from pathlib import Path
 import yaml
@@ -54,6 +54,17 @@ provider = G5k(conf)
 roles, networks = provider.init()
 
 roles = discover_networks(roles, networks)
+
+
+
+m = Energy(sensors=roles['sensored'], mongos=roles['collector'],
+           formulas=roles['collector'], influxdbs=roles['collector'],
+           grafana=roles['collector'],
+           monitor={'dram':True, 'cores': True})
+
+m.deploy()
+
+
 
 priors = [__python3__, __default_python3__, __docker__]
 with play_on(pattern_hosts='all', roles=roles, priors=priors) as p:
@@ -143,5 +154,10 @@ for box_name, box in boxes.items():
                 'BOX_REMOTE_CALLS': f'{box.remotes}', ## (TODO)
             },
         )
-        ## (TODO) ready checking
+        p.wait_for(
+            display_name=f'Waiting for box {box_name} to be ready…',
+            host='localhost', port=f'{box.port}', state='started',
+            delay=2, timeout=120,
+        )
+        
         
