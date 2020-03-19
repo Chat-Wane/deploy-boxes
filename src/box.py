@@ -1,5 +1,5 @@
 
-port = 9000
+port = 8080
 
 class Box:
     def __init__(self, polynome):
@@ -7,8 +7,8 @@ class Box:
         self.polynome = polynome
         self.remotes = []
         self.port = port
-        port = port + 1
         self.name = 'box-' + str(self.port)
+        port = port + 1
 
     def add(neighbors):
         self.remotes.push(neighbors)

@@ -1,0 +1,3 @@
+[submodule "emissary"]
+	path = emissary
+	url = https://github.com/chat-wane/emissary

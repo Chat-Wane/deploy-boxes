@@ -2,6 +2,10 @@ from enoslib.api import play_on, discover_networks
 from enoslib.infra.enos_g5k.provider import G5k
 from enoslib.infra.enos_g5k.configuration import (Configuration,
                                                   NetworkConfiguration)
+from utils import _get_address
+
+from pathlib import Path
+import yaml
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,6 +52,9 @@ roles, networks = provider.init()
 
 roles = discover_network(roles, networks)
 
+with play_on(pattern_hosts='all', roles=roles, priors=priors) as p:
+    p.pip(display_name='Installing python-docker…', name='docker')
+
 ## #A deploy jaeger, for now, we set up with all in one
 with play_on(pattern_hosts='collector', roles=roles) as p:
     p.docker_container(
@@ -57,8 +64,7 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
         detach=True, network_mode='host', state='started',
         recreate=True,
         published_ports=['5775:5775/udp',
-                         '6831:6831/udp',
-                         '6832:6832/udp',
+                         '6831:6831/udp', '6832:6832/udp',
                          '5778:5778',
                          '16686:16686',
                          '14268:14268',
@@ -70,6 +76,20 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
     )
 
 ## #B deploy envoy proxy, just here to create the appropriate id
+front_address = roles['front'][0].extra['my_network_ip']
+jaeger_address = roles['collector'][0].extra['my_network_ip']
+
+with Path('./emissary/front-envoy.yaml').open('r') as f:
+    document = yaml.load(f, Loader=yaml.FullLoader)
+
+document['static_resources']['clusters'][0]\
+    ['hosts']['socket_address']['address'] = front_address
+document['static_resources']['clusters'][1]\
+    ['hosts']['socket_address']['address'] = jaeger_address
+
+with Path('./envoy.yaml').open('w') as f:
+    yaml.dump(document, f)
+    
 with play_on(pattern_hosts='front', roles=roles) as p:
     p.docker_container(
         display_name=f'Installing front envoy…',
