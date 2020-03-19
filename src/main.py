@@ -90,7 +90,7 @@ with Path(envoy_path).open('r') as f:
 document['static_resources']['clusters'][0]\
     ['hosts']['socket_address']['address'] = front_address
 document['static_resources']['clusters'][1]\
-    ['hosts']['socket_address']['address'] = jaeger_address
+    ['hosts']['socket_address']['address'] = jaeger_address ## (TODO) fix, does not seem to work
 
 with Path(envoy_path).open('w') as f:
     yaml.dump(document, f)
@@ -107,7 +107,6 @@ with play_on(pattern_hosts='front', roles=roles) as p:
         name='front-envoy',
         nocache=True,
     )
-    
     p.docker_container(
         display_name='Installing front envoy…',
         name='envoy',
@@ -136,12 +135,13 @@ for box_name, box in boxes.items():
             recreate=True,
             published_ports=[f'{box.port}:{box.port}'],
             env={
-                'JAEGER_ENDPOINT': f'http://{jaeger_address}/api/traces', ## (TODO)
+                'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces', ## (TODO)
+                # 'OPENTRACING_JAEGER_HTTP_SENDER_URL': f'http://{jaeger_address}/api/traces', ## (TODO)
                 'SPRING_APPLICATION_NAME': f'{box.name}',
                 'SERVER_PORT': f'{box.port}',
                 'BOX_POLYNOME_COEFFICIENTS': f'{box.polynome}',
                 'BOX_REMOTE_CALLS': f'{box.remotes}', ## (TODO)
             },
         )
-
+        ## (TODO) ready checking
         

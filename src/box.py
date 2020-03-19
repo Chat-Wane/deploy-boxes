@@ -9,12 +9,15 @@ class Box:
         self.port = port
         self.name = 'box-' + str(self.port)
         port = port + 1
+        # 160 is out of bound so it does nothing
+        self.remotes = 'http://nothing:3615@160'
+        
 
     def add(self, neighbors):
         remotes = []
         for box, progress in neighbors:
             remotes.append('http://localhost:{}@{}'.format(box.port, progress))
-        self.remotes = ','.join(remotes)
-        print(self.remotes)
+        if len(remotes) > 0:
+            self.remotes = ','.join(remotes)
             
         
