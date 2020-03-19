@@ -10,6 +10,11 @@ class Box:
         self.name = 'box-' + str(self.port)
         port = port + 1
 
-    def add(neighbors):
-        self.remotes.push(neighbors)
+    def add(self, neighbors):
+        remotes = []
+        for box, progress in neighbors:
+            remotes.append('http://localhost:{}@{}'.format(box.port, progress))
+        self.remotes = ','.join(remotes)
+        print(self.remotes)
+            
         

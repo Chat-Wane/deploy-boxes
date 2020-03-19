@@ -1,8 +1,11 @@
 from enoslib.api import play_on, discover_networks
+from enoslib.api import __python3__, __default_python3__, __docker__
 from enoslib.infra.enos_g5k.provider import G5k
 from enoslib.infra.enos_g5k.configuration import (Configuration,
                                                   NetworkConfiguration)
 from utils import _get_address
+
+from box import Box
 
 from pathlib import Path
 import yaml
@@ -50,8 +53,9 @@ boxes['B'].add([(boxes['D'], 90)])
 provider = G5k(conf)
 roles, networks = provider.init()
 
-roles = discover_network(roles, networks)
+roles = discover_networks(roles, networks)
 
+priors = [__python3__, __default_python3__, __docker__]
 with play_on(pattern_hosts='all', roles=roles, priors=priors) as p:
     p.pip(display_name='Installing python-docker…', name='docker')
 
@@ -79,7 +83,8 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
 front_address = roles['front'][0].extra['my_network_ip']
 jaeger_address = roles['collector'][0].extra['my_network_ip']
 
-with Path('./emissary/front-envoy.yaml').open('r') as f:
+envoy_path = '../emissary/front_envoy.yaml'
+with Path(envoy_path).open('r') as f:
     document = yaml.load(f, Loader=yaml.FullLoader)
 
 document['static_resources']['clusters'][0]\
@@ -87,45 +92,55 @@ document['static_resources']['clusters'][0]\
 document['static_resources']['clusters'][1]\
     ['hosts']['socket_address']['address'] = jaeger_address
 
-with Path('./envoy.yaml').open('w') as f:
+with Path(envoy_path).open('w') as f:
     yaml.dump(document, f)
-    
+
 with play_on(pattern_hosts='front', roles=roles) as p:
+    p.copy(
+        display_name= 'Copying files to build envoy…',
+        src='../emissary',
+        dest='/tmp/',
+    )
+    p.docker_image(
+        display_name='Building front envoy image…',
+        path= '/tmp/emissary/',
+        name='front-envoy',
+        nocache=True,
+    )
+    
     p.docker_container(
-        display_name=f'Installing front envoy…',
+        display_name='Installing front envoy…',
         name='envoy',
         image='front-envoy:latest',
         detach=True, network_mode='host', state='started',
         recreate=True,
         published_ports=['80:80'],
-        env={
-            ## (TODO) set in yaml file, how to change this?
-            ## jaeger address
-            ## first front box address
-        },
     )
 
 ## #C deploy working boxes
-with play_on(pattern='working', roles=roles) as p:
-    p.docker_image(name='meow-world',
-                   tag='latest',
-                   load_path='/home/brnedelec/working-box_latest.tar')
+with play_on(pattern_hosts='working', roles=roles) as p:
+    p.docker_image(
+        display_name='Load box image…',
+        name='working-box',
+        tag='latest',
+        load_path='/home/brnedelec/working-box_latest.tar'
+    )
 
 for box_name, box in boxes.items():
     with play_on(pattern_hosts=box_name, roles=roles) as p:
         p.docker_container(
             display_name=f'Installing box {box_name} service…',
-            name=f'{box.name}-{{inventory_hostname_short}}',
+            name=f'{box.name}', ## be careful with uniqu names
             image='working-box:latest',
             detach=True, network_mode='host', state='started',
             recreate=True,
-            published_ports=[f'box.port:box.port'],
+            published_ports=[f'{box.port}:{box.port}'],
             env={
-                'JAEGER_ENDPOINT': 'http://{JAEGER_URL}/api/traces', ## (TODO)
+                'JAEGER_ENDPOINT': f'http://{jaeger_address}/api/traces', ## (TODO)
                 'SPRING_APPLICATION_NAME': f'{box.name}',
-                'SERVER_PORT': f{'box.port'},
-                'BOX_POLYNOME_COEFFICIENTS': f{'box.polynome'},
-                'BOX_REMOTE_CALLS': f{'box.remotes,'} ## (TODO)
+                'SERVER_PORT': f'{box.port}',
+                'BOX_POLYNOME_COEFFICIENTS': f'{box.polynome}',
+                'BOX_REMOTE_CALLS': f'{box.remotes}', ## (TODO)
             },
         )
 
