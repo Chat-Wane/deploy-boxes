@@ -1,5 +1,5 @@
-*/_tmp_enos_/
-*/cachedir/
+_tmp_enos_/
+cachedir/
 *.retry
 *~
 
