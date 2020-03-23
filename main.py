@@ -94,7 +94,7 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
 front_address = roles['front'][0].extra['my_network_ip']
 jaeger_address = roles['collector'][0].extra['my_network_ip']
 
-envoy_path = '../emissary/front_envoy.yaml'
+envoy_path = './envoy/front_envoy.yaml'
 with Path(envoy_path).open('r') as f:
     document = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -109,12 +109,12 @@ with Path(envoy_path).open('w') as f:
 with play_on(pattern_hosts='front', roles=roles) as p:
     p.copy(
         display_name= 'Copying files to build envoy…',
-        src='../emissary',
+        src='./envoy',
         dest='/tmp/',
     )
     p.docker_image(
         display_name='Building front envoy image…',
-        path= '/tmp/emissary/',
+        path= '/tmp/envoy/',
         name='front-envoy',
         nocache=True,
     )
@@ -146,8 +146,7 @@ for box_name, box in boxes.items():
             recreate=True,
             published_ports=[f'{box.port}:{box.port}'],
             env={
-                'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces', ## (TODO)
-                # 'OPENTRACING_JAEGER_HTTP_SENDER_URL': f'http://{jaeger_address}/api/traces', ## (TODO)
+                'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
                 'SPRING_APPLICATION_NAME': f'{box.name}',
                 'SERVER_PORT': f'{box.port}',
                 'BOX_POLYNOME_COEFFICIENTS': f'{box.polynome}',
