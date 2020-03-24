@@ -60,7 +60,7 @@ roles = discover_networks(roles, networks)
 m = Energy(sensors=roles['sensored'], mongos=roles['collector'],
            formulas=roles['collector'], influxdbs=roles['collector'],
            grafana=roles['collector'],
-           monitor={'dram':True, 'cores': True})
+           monitor={'dram': False, 'cores': True})
 
 m.deploy()
 
@@ -133,6 +133,7 @@ with play_on(pattern_hosts='working', roles=roles) as p:
         display_name='Load box image…',
         name='working-box',
         tag='latest',
+        force=True,
         load_path='/home/brnedelec/working-box_latest.tar'
     )
 
