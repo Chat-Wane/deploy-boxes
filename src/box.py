@@ -10,7 +10,7 @@ class Box:
         self.name = 'box-' + str(self.port)
         port = port + 1
         # 160 is out of bound so it does nothing
-        self.remotes = 'http://nothing:3615@160'
+        self.remotes = ''
         
 
     def add(self, neighbors):

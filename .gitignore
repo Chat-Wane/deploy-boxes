@@ -1,3 +1,5 @@
+*.dat
+*.eps
 _tmp_enos_/
 cachedir/
 *.retry

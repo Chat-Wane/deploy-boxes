@@ -3,15 +3,27 @@ from enoslib.api import __python3__, __default_python3__, __docker__
 from enoslib.infra.enos_g5k.provider import G5k
 from enoslib.infra.enos_g5k.configuration import (Configuration,
                                                   NetworkConfiguration)
+import sys 
+sys.path.append('..') ## because in subdirectory
+import logging
+logging.basicConfig(level=logging.DEBUG)
+import yaml
+import pycurl
+import json
+from random import seed
+from random import randint
+from io import BytesIO
+from pathlib import Path
+
 from utils import _get_address
 from box import Box
 from energyservice.energy import Energy
 
-from pathlib import Path
-import yaml
+
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+SEED = 2
+NB_QUERY = 400
+EXPORT_TRACES_FILE = Path('../../results/result_convergence_1_s{}.json'.format(SEED))
 
 
 
@@ -19,18 +31,14 @@ CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name='working-boxes',
+                                   job_name='working-boxes convergence_1',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
                                roles=['my_network'],
                                site=SITE)
 conf.add_network_conf(network)\
-    .add_machine(roles=['collector'],
-                 cluster=CLUSTER,
-                 nodes=1,
-                 primary_network=network)\
-    .add_machine(roles=['front', 'sensored', 'working', 'A', 'B', 'C', 'D'],
+    .add_machine(roles=['collector', 'front', 'working', 'A'],
                  cluster=CLUSTER,
                  nodes=1,
                  primary_network=network)\
@@ -38,31 +46,9 @@ conf.add_network_conf(network)\
                  
 
 
-boxes = {
-    'A': Box('1000'), # 1 second 
-    'B': Box('1000,100'), # 1 + 0.1*x seconds
-    'C': Box('1000,0,10'), # 1 + 0.01*x seconds
-    'D': Box('5000') # 5 seconds
-}
-
-boxes['A'].add([(boxes['B'], 50), (boxes['C'], 50)])
-boxes['B'].add([(boxes['D'], 90)])
-
-
-
 provider = G5k(conf)
 roles, networks = provider.init()
-
 roles = discover_networks(roles, networks)
-
-
-
-m = Energy(sensors=roles['sensored'], mongos=roles['collector'],
-           formulas=roles['collector'], influxdbs=roles['collector'],
-           grafana=roles['collector'],
-           monitor={'dram': False, 'cores': True})
-
-m.deploy()
 
 
 
@@ -70,7 +56,7 @@ priors = [__python3__, __default_python3__, __docker__]
 with play_on(pattern_hosts='all', roles=roles, priors=priors) as p:
     p.pip(display_name='Installing python-docker…', name='docker')
 
-## #A deploy jaeger, for now, we set up with all in one
+## #A deploy jaeger, for now, we set up with all-in-one
 with play_on(pattern_hosts='collector', roles=roles) as p:
     p.docker_container(
         display_name=f'Installing jaeger…',
@@ -94,7 +80,7 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
 front_address = roles['front'][0].extra['my_network_ip']
 jaeger_address = roles['collector'][0].extra['my_network_ip']
 
-envoy_path = './envoy/front_envoy.yaml'
+envoy_path = '../envoy/front_envoy.yaml'
 with Path(envoy_path).open('r') as f:
     document = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -109,7 +95,7 @@ with Path(envoy_path).open('w') as f:
 with play_on(pattern_hosts='front', roles=roles) as p:
     p.copy(
         display_name= 'Copying files to build envoy…',
-        src='./envoy',
+        src='../envoy',
         dest='/tmp/',
     )
     p.docker_image(
@@ -137,27 +123,71 @@ with play_on(pattern_hosts='working', roles=roles) as p:
         load_path='/home/brnedelec/working-box_latest.tar'
     )
 
-for box_name, box in boxes.items():
-    with play_on(pattern_hosts=box_name, roles=roles) as p:
-        p.docker_container(
-            display_name=f'Installing box {box_name} service…',
-            name=f'{box.name}', ## be careful with uniqu names
-            image='working-box:latest',
-            detach=True, network_mode='host', state='started',
-            recreate=True,
-            published_ports=[f'{box.port}:{box.port}'],
-            env={
-                'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
-                'SPRING_APPLICATION_NAME': f'{box.name}',
-                'SERVER_PORT': f'{box.port}',
-                'BOX_POLYNOME_COEFFICIENTS': f'{box.polynome}',
-                'BOX_REMOTE_CALLS': f'{box.remotes}', ## (TODO)
-            },
-        )
-        p.wait_for(
-            display_name=f'Waiting for box {box_name} to be ready…',
-            host='localhost', port=f'{box.port}', state='started',
-            delay=2, timeout=120,
-        )
+
+with play_on(pattern_hosts='A', roles=roles) as p:
+    p.docker_container(
+        display_name='Installing box-8080 service…',
+        name='box-8080',
+        image='working-box:latest',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=['8080:8080'],
+        env={
+            'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
+            'SPRING_APPLICATION_NAME': 'box-8080',
+            'SERVER_PORT': '8080',
+            'BOX_POLYNOMES_COEFFICIENTS': '1000,10@0',
+            'BOX_REMOTE_CALLS': '',
+            'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS': '4',
+	    'BOX_ENERGY_MAX_LOCAL_DATA': '10',
+	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED': '10',
+        },
+    )
+    p.wait_for(
+        display_name=f'Waiting for box-8080 to be ready…',
+        host='localhost', port='8080', state='started',
+        delay=2, timeout=120,
+    )
         
         
+
+
+## Generate traces
+
+seed(SEED)
+
+def getArgs ():
+    isLeft = randint(0,1)
+    if (isLeft == 1):    
+        return randint(51, 100) ## 1s + (0.5 to 1)s
+    else :
+        return randint(301, 350) ## 1s + (3 to 3.5)s
+
+for i in range(0, NB_QUERY):
+    url = 'http://{}:80?args={}'.format(front_address, getArgs())
+    print ('({}) Calling url: {}'.format(i, url))
+    
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+    c.setopt(c.HTTPHEADER, ['objective: 10000'])
+    c.perform()
+    c.close()
+
+
+
+## Export file of traces
+
+URL = 'http://{}:16686/api/traces?service=box-8080&limit={}'.format(
+    jaeger_address,
+    NB_QUERY)
+
+buffer = BytesIO()
+c = pycurl.Curl()
+c.setopt(c.URL, URL)
+c.setopt(c.WRITEDATA, buffer)
+c.perform()
+c.close()
+
+results = json.loads(buffer.getvalue())
+with EXPORT_TRACES_FILE.open('w') as f:
+    json.dump(results, f)
