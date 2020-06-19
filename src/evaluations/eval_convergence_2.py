@@ -21,9 +21,9 @@ from energyservice.energy import Energy
 
 
 
-SEED = 8
-NB_QUERY = 400
-EXPORT_TRACES_FILE = Path('../../results/result_convergence_1_s{}.json'.format(SEED))
+SEED = 1
+NB_QUERY = 1000
+EXPORT_TRACES_FILE = Path('../../results/result_convergence_2_s{}.json'.format(SEED))
 
 
 
@@ -31,7 +31,7 @@ CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name='working-boxes convergence_1',
+                                   job_name='working-boxes convergence_2',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
@@ -136,10 +136,10 @@ with play_on(pattern_hosts='A', roles=roles) as p:
             'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
             'SPRING_APPLICATION_NAME': 'box-8080',
             'SERVER_PORT': '8080',
-            'BOX_POLYNOMES_COEFFICIENTS': '1000,10@0',
+            'BOX_POLYNOMES_COEFFICIENTS': '1000,1@0',
             'BOX_REMOTE_CALLS': '',
             'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS': '4',
-	    'BOX_ENERGY_MAX_LOCAL_DATA': '10',
+	    'BOX_ENERGY_MAX_LOCAL_DATA': '100',
 	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED': '10',
         },
     )
@@ -159,9 +159,9 @@ seed(SEED)
 def getArgs ():
     isLeft = randint(0,1)
     if (isLeft == 1):    
-        return randint(51, 100) ## 1s + (0.5 to 1)s
+        return randint(501, 1000) ## 1s + (0.5 to 1)s
     else :
-        return randint(301, 350) ## 1s + (3 to 3.5)s
+        return randint(3001, 3500) ## 1s + (3 to 3.5)s
 
 for i in range(0, NB_QUERY):
     url = 'http://{}:80?args={}'.format(front_address, getArgs())

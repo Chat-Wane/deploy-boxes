@@ -22,8 +22,8 @@ from energyservice.energy import Energy
 
 
 SEED = 8
-NB_QUERY = 400
-EXPORT_TRACES_FILE = Path('../../results/result_convergence_1_s{}.json'.format(SEED))
+NB_QUERY = 550
+EXPORT_TRACES_FILE = Path('../../results/result_convergence_1b_s{}.json'.format(SEED))
 
 
 
@@ -136,7 +136,7 @@ with play_on(pattern_hosts='A', roles=roles) as p:
             'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
             'SPRING_APPLICATION_NAME': 'box-8080',
             'SERVER_PORT': '8080',
-            'BOX_POLYNOMES_COEFFICIENTS': '1000,10@0',
+            'BOX_POLYNOMES_COEFFICIENTS': '1000,5@0',
             'BOX_REMOTE_CALLS': '',
             'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS': '4',
 	    'BOX_ENERGY_MAX_LOCAL_DATA': '10',
@@ -159,9 +159,9 @@ seed(SEED)
 def getArgs ():
     isLeft = randint(0,1)
     if (isLeft == 1):    
-        return randint(51, 100) ## 1s + (0.5 to 1)s
+        return randint(51, 100) ## 1s + (0.25 to 0.5)s
     else :
-        return randint(301, 350) ## 1s + (3 to 3.5)s
+        return randint(301, 350) ## 1s + (1.5 to 1.75)s
 
 for i in range(0, NB_QUERY):
     url = 'http://{}:80?args={}'.format(front_address, getArgs())

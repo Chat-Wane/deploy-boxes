@@ -5,10 +5,14 @@ from io import BytesIO
 
 
 
-NB_QUERY = 400
-TRACES_FILES = [Path('result_convergence_1_s1.json'),
-                Path('tracesSingle.json')]
-URL = 'http://localhost:16686/api/traces?service=box-8080&limit={}'.format(NB_QUERY)
+TRACES_FILES = [Path('result_convergence_1b_s1.json'),            
+                Path('result_convergence_1b_s2.json'),
+                Path('result_convergence_1b_s3.json'),
+                Path('result_convergence_1b_s4.json'),
+                Path('result_convergence_1b_s5.json'),
+                Path('result_convergence_1b_s6.json'),
+                Path('result_convergence_1b_s7.json'),
+                Path('result_convergence_1b_s8.json')]
 
 
 
@@ -51,5 +55,18 @@ for TRACES_FILE in TRACES_FILES:
 
             counters[i] = (counters[i][0] + left, counters[i][1] + right)
 
+groupBy = 10
+j = 0
 for i in range(0, len(counters)):
-    print ("{}\t{}".format(counters[i][0], counters[i][1]))
+    if j >= groupBy:
+        j = 0
+        # print ("{}\t{}".format(counters[i][0], counters[i][1]))
+        print ("{}\t{}".format(s[0], s[1]))
+        
+    if j == 0:
+        s = (0, 0)
+        
+    s = (s[0] + counters[i][0]/groupBy, s[1] + counters[i][1]/groupBy)
+    j = j + 1
+
+

@@ -21,9 +21,9 @@ from energyservice.energy import Energy
 
 
 
-SEED = 8
-NB_QUERY = 400
-EXPORT_TRACES_FILE = Path('../../results/result_convergence_1_s{}.json'.format(SEED))
+SEED = 1
+NB_QUERY = 1000
+EXPORT_TRACES_FILE = Path('../../results/result_convergence_3_s{}.json'.format(SEED))
 
 
 
@@ -31,14 +31,14 @@ CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name='working-boxes convergence_1',
+                                   job_name='working-boxes convergence_2',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
                                roles=['my_network'],
                                site=SITE)
 conf.add_network_conf(network)\
-    .add_machine(roles=['collector', 'front', 'working', 'A'],
+    .add_machine(roles=['collector', 'front', 'working', 'A', 'B', 'C', 'D', 'E'],
                  cluster=CLUSTER,
                  nodes=1,
                  primary_network=network)\
@@ -49,6 +49,9 @@ conf.add_network_conf(network)\
 provider = G5k(conf)
 roles, networks = provider.init()
 roles = discover_networks(roles, networks)
+
+
+
 
 
 
@@ -139,7 +142,7 @@ with play_on(pattern_hosts='A', roles=roles) as p:
             'BOX_POLYNOMES_COEFFICIENTS': '1000,10@0',
             'BOX_REMOTE_CALLS': '',
             'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS': '4',
-	    'BOX_ENERGY_MAX_LOCAL_DATA': '10',
+	    'BOX_ENERGY_MAX_LOCAL_DATA': '100',
 	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED': '10',
         },
     )
