@@ -1,6 +1,8 @@
 
 port = 8080
 
+
+
 class Box:
     def __init__(self, polynome):
         global port
@@ -19,5 +21,4 @@ class Box:
             remotes.append('http://localhost:{}@{}'.format(box.port, progress))
         if len(remotes) > 0:
             self.remotes = ','.join(remotes)
-            
-        
+        return self
