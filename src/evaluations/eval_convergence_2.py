@@ -19,6 +19,8 @@ from utils import _get_address
 from box import Box
 from energyservice.energy import Energy
 
+# Simple experiment with 1 working-box but higher parameters than convergence 1
+
 
 
 SEED = 1

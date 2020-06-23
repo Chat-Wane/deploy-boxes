@@ -32,3 +32,11 @@ class Box:
     def add_neighbor (self, box) :
         self.remotes.append(box)
     
+    def POLYNOME (self) :
+        return ','.join([str(coef) for coef in self.BOX_POLYNOMES_COEFFICIENTS]) + '@' + str(self.INPUT_INDEX)
+
+    def REMOTE_CALLS (self, boxNameToAddress):
+        addresses = ['http://'+ boxNameToAddress[box.SPRING_APPLICATION_NAME] +
+                     ':' + str(box.SERVER_PORT) + '@100'
+                     for box in self.remotes]
+        return ','.join(addresses)

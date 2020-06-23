@@ -10,7 +10,7 @@ static_resources:
   - connect_timeout: 5s
     hosts:
       socket_address:
-        address: 172.16.192.6
+        address: 172.16.192.18
         port_value: 8080
     lb_policy: round_robin
     name: main
@@ -18,7 +18,7 @@ static_resources:
   - connect_timeout: 5s
     hosts:
       socket_address:
-        address: 172.16.192.6
+        address: 172.16.192.18
         port_value: 9411
     lb_policy: round_robin
     name: jaeger

@@ -18,7 +18,9 @@ class BoxesType(Enum):
 class Boxes:
 
     def __init__ (self, depth = 1, arity = 0, kind = BoxesType.CUSTOM):
+        self.boxes = []
         self.entryPoint = Box() # default entrypoint
+        self.boxes.append(self.entryPoint)
         self.length = 1
         
         if (kind == BoxesType.CUSTOM):
@@ -34,7 +36,9 @@ class Boxes:
                 for j in range(0, arity):
                      inputIndex = inputIndex + 1
                      self.length = self.length + 1
-                     neighbors.append( Box(inputIndex) )
+                     box = Box(inputIndex)
+                     neighbors.append(box)
+                     self.boxes.append(box)
                      buildingPoint.add_neighbor(neighbors[len(neighbors)-1])
                 buildingPoint = neighbors[len(neighbors) - 1]
                      

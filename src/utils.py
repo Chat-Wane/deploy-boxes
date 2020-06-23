@@ -1,6 +1,6 @@
 
 
-def _get_address(self, host, network) -> str:
+def _get_address(host, network = None) -> str:
     """Get the IP address of the host.
     Args:
         host: the host.
