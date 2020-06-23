@@ -89,6 +89,13 @@ class Boxes:
         else:
             return localCost
 
+    def getInput (self, intervals = None):
+        whichInterval = randint(0, len( list(intervals) ) - 1) 
+        minI = list(intervals)[whichInterval].lower
+        maxI = list(intervals)[whichInterval].upper        
+        return randint(minI, maxI)
+
+            
     def getInputs (self, intervals = None):
         ## (TODO) create a configurable generator of inputs
         if intervals is None: # default
@@ -96,10 +103,7 @@ class Boxes:
 
         randoms = []
         for i in range(0, self.length):
-            whichInterval = randint(0, len( list(intervals) ) - 1)        
-            minI = list(intervals)[whichInterval].lower
-            maxI = list(intervals)[whichInterval].upper        
-            randoms.append(randint(minI, maxI))
+            randoms.append(self.getInput(intervals))
             
         return randoms
 

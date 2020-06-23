@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 import yaml
 import pycurl
 import json
+import portion as I
 from random import seed
 from random import randint
 from io import BytesIO
@@ -176,15 +177,42 @@ for box in reversed(boxes.boxes):
 
 ## Generate traces
 for i in range(0, NB_QUERY):
+    ## #1 get possible objective
+    urlIntervals = f'http://{front_address}:80/getEnergyIntervals'
+    logging.debug(f'({i}) Calling url: {urlIntervals}')
+    buffer = BytesIO()    
+    c = pycurl.Curl()
+    c.setopt(c.URL, urlIntervals)
+    c.setopt(c.WRITEDATA, buffer)
+    c.perform()
+    c.close()
+
+    value = buffer.getvalue().decode("utf-8")
+    intervalsAsArray = []
+    if value != "EMPTY":
+        value = value.replace("‥", ",")
+        intervalsAsArray = json.loads('[' + value + ']')
+        logging.debug(f'intervals {intervalsAsArray}')
+        intervals = I.empty()
+        for interval in intervalsAsArray:
+            intervals = intervals | I.closed(int(interval[0]), int(interval[1]))
+            
+        objective = boxes.getInput(intervals)
+    else:
+        objective = -1
+
+
+    logging.debug(f'objective {objective}')
+    ## #2 call the application
     inputs  = boxes.getInputs() ## (TODO) write input ranges
-    inputsString = ','.join([str(i) for i in inputs])
+    inputsString = ','.join([str(i) for i in inputs])    
     url = f'http://{front_address}:80?args={inputsString}'
-    print (f'''({i}) Calling url: {url} \
+    logging.debug(f'''({i}) Calling url: {url} \
     ETA {boxes.getTimeForInputs(inputs)}, max {boxes.getMaxTime()}''')
 
     c = pycurl.Curl()
     c.setopt(c.URL, url)
-    c.setopt(c.HTTPHEADER, ['objective: 100000'])
+    c.setopt(c.HTTPHEADER, [f'objective: {objective}'])
     c.perform()
     c.close()
 
@@ -192,7 +220,7 @@ for i in range(0, NB_QUERY):
 
 ## Export file of traces
 
-URL = f'http://{jaeger_address}:16686/api/traces?service=box-8080&limit={NB_QUERY}'
+URL = f'http://{jaeger_address}:16686/api/traces?service={boxes.entryPoint.SPRING_APPLICATION_NAME}&limit={NB_QUERY}'
 
 buffer = BytesIO()
 c = pycurl.Curl()
