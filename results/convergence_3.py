@@ -34,7 +34,7 @@ for TRACES_FILE in TRACES_FILES:
                             hasTagRewritten = True
                             rewritten.append((start, tag['value']))
                     if not hasTagRewritten:
-                        rewritten.append(start, False)
+                        rewritten.append((start, False))
                 
         changes = sorted(changes, key=lambda x: x[0])
         rewritten = sorted(rewritten, key=lambda x: x[0])
