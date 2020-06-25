@@ -9,57 +9,84 @@ TRACES_FILES = [Path('result_convergence_3_s1.json')]
 
 
 
+def _getTag(name, tags):
+    for tag in tags:
+        if (tag['key'] == name):
+            return tag['value']
+    return None
+                                    
 
-counters = []
-
+errors = []
+rewrittens = []
 for TRACES_FILE in TRACES_FILES:
     if not TRACES_FILE.is_file():
         print ("/!\ The file you try to analyze does not exist.")
         sys.exit(0)
 
+        
     with TRACES_FILE.open('r') as f:
         results = json.load(f)
-
-        changes = []
-        rewritten = []
+        
+        traces = []
         for trace in results['data']:
+            isValidTrace = False
+            starttimes = []
             for span in trace['spans']:
                 if (span['operationName'] == 'handle'):
-                    start = span['startTime']
-                    hasTagRewritten = False
-                    for tag in span['tags']:
-                        if (tag['key'] == 'isLastInputKept'):
-                            changes.append((start, tag['value']))
-                        if (tag['key'] == 'isLastInputRewritten'):
-                            hasTagRewritten = True
-                            rewritten.append((start, tag['value']))
-                    if not hasTagRewritten:
-                        rewritten.append(start, False)
+                    isValidTrace = True
+                    starttimes.append(span['startTime'])
+                    
+            if isValidTrace:
+                traces.append((min(starttimes), trace))
+
+        traces = sorted(traces, key=lambda x: x[0])
+
+
+
+        i = 0
+        for trace in [kv[1] for kv in traces]:
+            globalObjective = 0            
+            sumOfCosts = 0
+            sumOfRewritten = 0
+            for span in trace['spans']:
+                if (span['operationName'] == 'handle'):                    
+                    tags = span['tags']
+                    sumOfCosts = sumOfCosts + span['duration'] / 1000
+                    if (span['processID'] == 'p1'): ## handle@box-8080
+                        globalObjective = _getTag('objective', tags)
+                    
+                    isLastInputKept = _getTag('isLastInputKept', tags)
+                    isLastInputRewritten = _getTag('isLastInputRewritten', tags)
+
+                    rewritten = 1 if isLastInputRewritten else 0
+                    sumOfRewritten = sumOfRewritten + rewritten
+                    
+                                    
+            if i >= len(errors):
+                errors.append(0)
+                rewrittens.append(0)
+            
+            rewrittens[i] = rewrittens[i] + sumOfRewritten/len(TRACES_FILES)
+            errors[i] = errors[i] + abs(sumOfCosts - globalObjective)/len(TRACES_FILES)
+            i = i + 1
                 
-        changes = sorted(changes, key=lambda x: x[0])
-        rewritten = sorted(rewritten, key=lambda x: x[0])
-
-        for i in range(0, len(changes)):
-            if (i >= len(counters)):
-                counters.append((0, 0))
-        
-            left = 1 if changes[i][1] else 0;
-            right = 1 if rewritten[i][1] else 0;
-
-            counters[i] = (counters[i][0] + left, counters[i][1] + right)
-
 groupBy = 10
 j = 0
-for i in range(0, len(counters)):
+
+## (todo) write meaning of values in comment
+print (f"#error ({len(errors)})")
+for i in range(0, len(errors)):
     if j >= groupBy:
         j = 0
         # print ("{}\t{}".format(counters[i][0], counters[i][1]))
-        print ("{}\t{}".format(s[0], s[1]))
+        print (f"{sErrors}\t{sRewritten}")
         
     if j == 0:
-        s = (0, 0)
-        
-    s = (s[0] + counters[i][0]/groupBy, s[1] + counters[i][1]/groupBy)
+        sErrors = 0
+        sRewritten = 0
+    
+    sErrors = sErrors + errors[i]/groupBy
+    sRewritten = sRewritten + rewrittens[i]/groupBy
     j = j + 1
 
 

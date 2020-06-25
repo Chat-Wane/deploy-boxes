@@ -44,8 +44,8 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 1
-NB_QUERY = 550
+SEED = 2
+NB_QUERY = 1000
 EXPORT_TRACES_FILE = Path('../../results/result_convergence_3_s{}.json'.format(SEED))
 
 boxes = Boxes(depth=3, arity=2, kind=BoxesType.WORST)
@@ -220,7 +220,8 @@ for i in range(0, NB_QUERY):
 
 ## Export file of traces
 
-URL = f'http://{jaeger_address}:16686/api/traces?service={boxes.entryPoint.SPRING_APPLICATION_NAME}&limit={NB_QUERY}'
+## 2*NB_QUERY because of getIntervalEnergy now
+URL = f'http://{jaeger_address}:16686/api/traces?service={boxes.entryPoint.SPRING_APPLICATION_NAME}&limit={2*NB_QUERY}'
 
 buffer = BytesIO()
 c = pycurl.Curl()
@@ -229,6 +230,7 @@ c.setopt(c.WRITEDATA, buffer)
 c.perform()
 c.close()
 
+logging.debug(f"Exporting traces to {EXPORT_TRACES_FILE}.")
 results = json.loads(buffer.getvalue())
 with EXPORT_TRACES_FILE.open('w') as f:
     json.dump(results, f)

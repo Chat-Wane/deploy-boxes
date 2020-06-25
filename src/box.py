@@ -6,7 +6,7 @@ port = 8080
 class Box:
     def __init__(self,
                  input_index = 0, polynome = [100,5],
-                 threshold = 4, local_data = 10, factor = 10):
+                 threshold = 3, local_data = 10, factor = 10):
         global port
         self.BOX_POLYNOMES_COEFFICIENTS = polynome
         self.INPUT_INDEX = input_index
