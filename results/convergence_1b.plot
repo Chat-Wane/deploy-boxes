@@ -1,6 +1,6 @@
 set term postscript eps color blacktext "Helvetica" 24
 
-set output "convergence.eps"
+set output "convergence_1b.eps"
 set xrange [0:550]
 set yrange [0:1]
 
