@@ -5,10 +5,10 @@ from io import BytesIO
 
 
 
-TRACES_FILES = [Path('result_convergence_3_s1.json'),
-                Path('result_convergence_3_s2.json'),
-                Path('result_convergence_3_s3.json'),
-                Path('result_convergence_3_s4.json')]
+TRACES_FILES = [Path('result_convergence_3_s17.json'),
+                Path('result_convergence_3_s18.json'),
+                Path('result_convergence_3_s19.json')]
+                # Path('result_convergence_3_s4.json')]
 
 
 

@@ -64,6 +64,14 @@ class Boxes:
     # def addBox (self, polynome, name, neighbors):
     # def setInputGenerator ( ) :
 
+    def getLeafNodes (self, withSize = 0):
+        leaves = []
+        for box in self.boxes:
+            if len(box.remotes) == withSize:
+                leaves.append(box)
+        return leaves
+
+    
               
     def getMaxTime (self, intervals = None):
         if intervals is None: # default

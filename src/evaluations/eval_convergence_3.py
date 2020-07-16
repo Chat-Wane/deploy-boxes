@@ -44,8 +44,8 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 4
-NB_QUERY = 1000
+SEED = 20
+NB_QUERY = 1200
 EXPORT_TRACES_FILE = Path('../../results/result_convergence_3_s{}.json'.format(SEED))
 
 boxes = Boxes(depth=3, arity=2, kind=BoxesType.WORST)
