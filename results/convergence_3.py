@@ -6,7 +6,13 @@ from pygnuplot import gnuplot
 
 
 
-TRACES_FILES = [Path('result_convergence_3_s1.json'),]
+TRACES_FILES = [Path('result_convergence_3_s11.json'),
+                Path('result_convergence_3_s12.json'),
+                Path('result_convergence_3_s13.json'),
+                Path('result_convergence_3_s14.json'),
+                Path('result_convergence_3_s15.json'),
+                Path('result_convergence_3_s16.json'),]
+PLOT = True
 
 
 
@@ -108,6 +114,10 @@ with Path(__file__+'.dat').open('w') as f:
 
 
 
+if not PLOT:
+    print ("No output plot file…")
+    sys.exit(0)
+
 g = gnuplot.Gnuplot(log = True,
                output = f'"{__file__}.eps"',
                term = 'postscript eps color blacktext "Helvetica" 20',
@@ -146,5 +156,6 @@ g.cmd('set key right bottom')
 
 
 g.plot(f'"{__file__}.dat" u ($0)*10+5:($2) t "self-tuning ratio" w linespoints,\
-"failures_2.dat" u ($0)*10+5:($3) t "local data kept ratio" w linespoints')
+"{__file__}.dat" u ($0)*10+5:($3) t "local data kept ratio" w linespoints')
 
+print (f"Plotted into file {__file__}.eps")

@@ -44,7 +44,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 11
+SEED = 16
 NB_QUERY = 1500
 EXPORT_TRACES_FILE = Path('../../results/result_convergence_3_s{}.json'.format(SEED))
 
