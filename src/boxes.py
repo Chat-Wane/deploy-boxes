@@ -45,8 +45,23 @@ class Boxes:
         elif (kind == BoxesType.BALANCED):
             logging.debug(f"""Creating a balanced graph of \
             working-boxes (d {depth}; a {arity}).""")
-            logging.warn("/!\ WiP /!\ ")
-            ## (TODO)
+            buildingPoints = [self.entryPoint]
+            boxToDepth = {}
+            boxToDepth[self.entryPoint.SPRING_APPLICATION_NAME] = 0
+            while len(buildingPoints) > 0:
+                buildingPoint = buildingPoints.pop()
+                neighbors = []
+                buildingPointDepth = boxToDepth[buildingPoint.SPRING_APPLICATION_NAME]
+                if buildingPointDepth < depth:
+                    for j in range (0, arity):
+                        box = Box(self.length)
+                        self.length = self.length + 1
+                        boxToDepth[box.SPRING_APPLICATION_NAME] = buildingPointDepth + 1
+                        neighbors.append(box)
+                        self.boxes.append(box)
+                        buildingPoint.add_neighbor(neighbors[len(neighbors)-1])
+                    buildingPoints.extend(neighbors)
+
 
 
 

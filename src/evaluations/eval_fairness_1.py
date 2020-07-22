@@ -23,13 +23,16 @@ from boxes import Boxes, BoxesType
 ## Experiment on a small unbalanced tree of working-boxes with small
 ## parameters
 
+## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
+## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
+
 
 
 CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name='working-boxes failures_1',
+                                   job_name=f'working-boxes {__file__}',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
@@ -44,9 +47,10 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 3
-NB_QUERY = 1200
-EXPORT_TRACES_FILE = Path('../../results/result_failures_1_s{}.json'.format(SEED))
+SEED = 1
+NB_QUERY = 1500
+FAIRNESS = 0.1
+EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_1_s{SEED}.json')
 
 boxes = Boxes(depth=3, arity=2, kind=BoxesType.WORST)
 boxes.print()
@@ -158,6 +162,7 @@ for box in reversed(boxes.boxes):
                 'SERVER_PORT': f'{box.SERVER_PORT}',
                 'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
                 'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
+                'BOX_ENERGY_FAIRNESS_FACTOR': FAIRNESS, ## THIS IS THE DIFFERENCE
                 'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
                 f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
 	        'BOX_ENERGY_MAX_LOCAL_DATA':
@@ -176,6 +181,7 @@ for box in reversed(boxes.boxes):
 
 
 ## Generate traces
+nb_crashes = 0
 for i in range(0, NB_QUERY):
     ## #1 get possible objective
     urlIntervals = f'http://{front_address}:80/getEnergyIntervals'
@@ -215,56 +221,6 @@ for i in range(0, NB_QUERY):
     c.setopt(c.HTTPHEADER, [f'objective: {objective}'])
     c.perform()
     c.close()
-
-    ## #3 failures, we remove some leaf nodes
-    if i == 550:
-        leaves = boxes.getLeafNodes()
-        leaves = [leaves[0]] ## (TODO) more configurable, for now, only one
-        for box in leaves:
-            box_address = boxNameToAddress[box.SPRING_APPLICATION_NAME]            
-            with play_on(pattern_hosts=box_address, roles=roles) as p:
-                p.docker_container(
-                display_name=f'Crashing box {box.SPRING_APPLICATION_NAME} service…',
-                    name=f'{box.SPRING_APPLICATION_NAME}', ## be careful with uniqu names
-                    recreate=False,
-                    state='stopped',
-                    force_kill=True,
-                )
-            
-    ## #4 we add them again after a while
-    if i == 650:
-        # leaves = boxes.getLeafNodes()
-        # leaves = [leaves[0]] ## (TODO) more configurable, for now, only one
-        for box in leaves:
-            box_address = boxNameToAddress[box.SPRING_APPLICATION_NAME]            
-            with play_on(pattern_hosts=box_address, roles=roles) as p:        
-                p.docker_container(
-                    display_name=f'RE-Installing box {box.SPRING_APPLICATION_NAME} service…',
-                    name=f'{box.SPRING_APPLICATION_NAME}', ## be careful with uniqu names
-                    image='working-box:latest',
-                    detach=True, network_mode='host', state='started',
-                    recreate=True,
-                    published_ports=[f'{box.SERVER_PORT}:{box.SERVER_PORT}'],
-                    env={
-                        'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
-                        'SPRING_APPLICATION_NAME': f'{box.SPRING_APPLICATION_NAME}',
-                        'SERVER_PORT': f'{box.SERVER_PORT}',
-                        'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
-                        'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
-                        'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
-                        f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
-	                'BOX_ENERGY_MAX_LOCAL_DATA':
-                        f'{box.BOX_ENERGY_MAX_LOCAL_DATA}',
-	                'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED':
-                        f'{box.BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED}',
-                    },
-                )
-                p.wait_for(
-                    display_name=f'Waiting for box {box.SPRING_APPLICATION_NAME} to be ready…',
-                    host='localhost', port=f'{box.SERVER_PORT}', state='started',
-                    delay=2, timeout=120,
-                )
-
     
 
 
