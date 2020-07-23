@@ -47,7 +47,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 1
+SEED = 2
 NB_QUERY = 1500
 FAIRNESS = 0.1
 EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_1_s{SEED}.json')
@@ -162,7 +162,7 @@ for box in reversed(boxes.boxes):
                 'SERVER_PORT': f'{box.SERVER_PORT}',
                 'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
                 'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
-                'BOX_ENERGY_FAIRNESS_FACTOR': FAIRNESS, ## THIS IS THE DIFFERENCE
+                'BOX_ENERGY_FAIRNESS_FACTOR': f'{FAIRNESS}', ## THIS IS THE DIFFERENCE
                 'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
                 f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
 	        'BOX_ENERGY_MAX_LOCAL_DATA':

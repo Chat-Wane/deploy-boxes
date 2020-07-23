@@ -32,7 +32,7 @@ CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name=f'working-boxes {__file__}',
+                                   job_name=f'working-boxes eval_fairness_1.py',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
@@ -47,10 +47,10 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 1
+SEED = 2
 NB_QUERY = 1500
-FAIRNESS = 0.2
-EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_1_s{SEED}.json')
+FAIRNESS = 0.4
+EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_2_s{SEED}.json')
 
 boxes = Boxes(depth=3, arity=2, kind=BoxesType.WORST)
 boxes.print()
@@ -162,7 +162,7 @@ for box in reversed(boxes.boxes):
                 'SERVER_PORT': f'{box.SERVER_PORT}',
                 'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
                 'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
-                'BOX_ENERGY_FAIRNESS_FACTOR': FAIRNESS, ## THIS IS THE DIFFERENCE
+                'BOX_ENERGY_FAIRNESS_FACTOR': f'{FAIRNESS}', ## THIS IS THE DIFFERENCE
                 'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
                 f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
 	        'BOX_ENERGY_MAX_LOCAL_DATA':

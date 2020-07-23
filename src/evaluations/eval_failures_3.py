@@ -44,7 +44,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 2
+SEED = 6
 NB_QUERY = 1500
 NB_CRASHES = 3
 EXPORT_TRACES_FILE = Path(f'../../results/result_failures_3_s{SEED}.json')

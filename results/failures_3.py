@@ -7,7 +7,10 @@ from pygnuplot import gnuplot
 
 
 TRACES_FILES = [Path('result_failures_3_s1.json'),
-                Path('result_failures_3_s2.json'),]
+                Path('result_failures_3_s2.json'),
+                Path('result_failures_3_s3.json'),
+                Path('result_failures_3_s4.json'),
+                Path('result_failures_3_s5.json'),]
 PLOT = True
 
 
@@ -115,9 +118,9 @@ if not PLOT:
     sys.exit(0)
 
 g = gnuplot.Gnuplot(log = True,
-               output = f'"{__file__}.eps"',
-               term = 'postscript eps color blacktext "Helvetica" 20',
-               multiplot = 'layout 2, 1 spacing 0.5,0.5')
+                    output = f'"{__file__}.eps"',
+                    term = 'postscript eps color blacktext "Helvetica" 20',
+                    multiplot = 'layout 2, 1 spacing 0.5,0.5')
 
 g.cmd('set ylabel "time (second)"',
       'set format y "%.1f"')
