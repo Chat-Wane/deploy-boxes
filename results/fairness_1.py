@@ -151,19 +151,22 @@ g = gnuplot.Gnuplot(log = True,
 g.cmd('set xrange [0:1500]',
       'set xtics format ""',)
 
-g.cmd('set ylabel "error (second)"')
+g.cmd('set ylabel "error (second)"',
+      'set format y "%.1f"',
+      'set yrange [0:3.5]')
 
 g.cmd('set bmargin 0.75')
 
 g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($2)/1000 t "f=0.0" \
 w linespoints lt rgb "orange", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($4)/1000 t "f=0.1" \
-w linespoints lt rgb "blue", \
+w linespoints lt rgb "web-blue", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($6)/1000 t "f=0.4" \
-w linespoints lt rgb "green"')
+w linespoints lt rgb "forest-green"')
 
 g.cmd('set ylabel "standard deviation"',
-      'set yrange [0:650]')
+      'set yrange [0:650]',
+      'set format y "%3.0f"')
 g.cmd('set xtics format',
       'set xlabel "#execution"')
 
@@ -175,9 +178,9 @@ g.cmd('set key left bottom')
 g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($1) t "f=0.0" \
 w linespoints lt rgb "orange", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($3) t "f=0.1" \
- w linespoints lt rgb "blue", \
+ w linespoints lt rgb "web-blue", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5) t "f=0.4"\
- w linespoints lt rgb "green"')
+ w linespoints lt rgb "forest-green"')
 
 
 print (f"Plotted into file {__file__}.eps")
