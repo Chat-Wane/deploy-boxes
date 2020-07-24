@@ -105,7 +105,7 @@ print("Done with third set of files")
 
 
 
-groupBy = 10
+groupBy = 15
 j = 0
 
 with Path(__file__+'.dat').open('w') as f:
@@ -162,12 +162,14 @@ g.cmd('set ylabel "error (second)"',
 
 g.cmd('set bmargin 0.75')
 
-g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($2)/1000 t "f=0.0" \
-w linespoints lt rgb "orange", \
+g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($6)/1000 t "f=0.4" \
+w linespoint pt 6 lt rgb "forest-green", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($4)/1000 t "f=0.1" \
-w linespoints lt rgb "web-blue", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($6)/1000 t "f=0.4" \
-w linespoints lt rgb "forest-green"')
+w linespoint pt 2 lt rgb "web-blue", \
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($2)/1000 t "f=0.0" \
+w linespoint pt 1 lt rgb "orange"')
+
+
 
 g.cmd('set ylabel "standard deviation"',
       'set yrange [0:650]',
@@ -181,11 +183,11 @@ g.cmd('set tmargin 0.0',
 g.cmd('set key left bottom')
 
 g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($1) t "f=0.0" \
-w linespoints lt rgb "orange", \
+w linespoint lt rgb "orange", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($3) t "f=0.1" \
- w linespoints lt rgb "web-blue", \
+ w linespoint lt rgb "web-blue", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5) t "f=0.4"\
- w linespoints lt rgb "forest-green"')
+ w linespoint pt 6 lt rgb "forest-green"')
 
 
 print (f"Plotted into file {__file__}.eps")
