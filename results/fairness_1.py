@@ -13,12 +13,17 @@ TRACES_FILES = [Path('result_convergence_3_s11.json'),
                 Path('result_convergence_3_s12.json'),
                 Path('result_convergence_3_s13.json'),
                 Path('result_convergence_3_s14.json'),
-                Path('result_convergence_3_s15.json'),
-                Path('result_convergence_3_s16.json'),]
+                Path('result_convergence_3_s15.json'),]
 TRACES_FILES_B = [Path('result_fairness_1_s1.json'),
-                  Path('result_fairness_1_s2.json')]
+                  Path('result_fairness_1_s2.json'),
+                  Path('result_fairness_1_s3.json'),
+                  Path('result_fairness_1_s4.json'),
+                  Path('result_fairness_1_s5.json'),]                
 TRACES_FILES_C = [Path('result_fairness_2_s1.json'),
-                  Path('result_fairness_2_s2.json')]
+                  Path('result_fairness_2_s2.json'),
+                  Path('result_fairness_2_s3.json'),
+                  Path('result_fairness_2_s4.json'),
+                  Path('result_fairness_2_s5.json'),]
 
 PLOT = True
 
@@ -100,7 +105,7 @@ print("Done with third set of files")
 
 
 
-groupBy = 20
+groupBy = 10
 j = 0
 
 with Path(__file__+'.dat').open('w') as f:
@@ -133,8 +138,8 @@ with Path(__file__+'.dat').open('w') as f:
 
         j = j + 1
         
-    if j > 5:
-        f.write(f"{sumVarCosts/j}\t{sumErrors/j}\t{sumVarCostsB/j}\t{sumErrorsB/j}\t{sumVarCostsC/j}\t{sumErrorsC/j}\n")
+    # if j > 5:
+    #     f.write(f"{sumVarCosts/j}\t{sumErrors/j}\t{sumVarCostsB/j}\t{sumErrorsB/j}\t{sumVarCostsC/j}\t{sumErrorsC/j}\n")
 
 
 

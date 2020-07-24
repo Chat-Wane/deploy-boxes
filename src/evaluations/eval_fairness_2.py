@@ -32,7 +32,7 @@ CLUSTER = "econome"
 SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
-                                   job_name=f'working-boxes eval_fairness_1.py',
+                                   job_name=f'working-boxes {__file__}',
                                    walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
@@ -47,7 +47,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 2
+SEED = 5
 NB_QUERY = 1500
 FAIRNESS = 0.4
 EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_2_s{SEED}.json')

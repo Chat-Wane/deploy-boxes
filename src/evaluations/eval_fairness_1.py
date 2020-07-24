@@ -23,9 +23,6 @@ from boxes import Boxes, BoxesType
 ## Experiment on a small unbalanced tree of working-boxes with small
 ## parameters
 
-## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
-## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
-
 
 
 CLUSTER = "econome"
@@ -47,7 +44,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 2
+SEED = 5
 NB_QUERY = 1500
 FAIRNESS = 0.1
 EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_1_s{SEED}.json')
