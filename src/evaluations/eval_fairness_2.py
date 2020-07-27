@@ -21,10 +21,8 @@ from box import Box
 from boxes import Boxes, BoxesType
 
 ## Experiment on a small unbalanced tree of working-boxes with small
-## parameters
-
-## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
-## (TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)(TODO)
+## parameters. Compared to other eval_fairness, this one have a higher
+## fairness factor set to 0.4.
 
 
 

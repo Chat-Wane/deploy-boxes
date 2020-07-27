@@ -3,6 +3,8 @@ from enoslib.api import __python3__, __default_python3__, __docker__
 from enoslib.infra.enos_g5k.provider import G5k
 from enoslib.infra.enos_g5k.configuration import (Configuration,
                                                   NetworkConfiguration)
+
+import time
 import sys 
 sys.path.append('..') ## because in subdirectory
 import logging
@@ -30,7 +32,7 @@ SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
                                    job_name=f'working-boxes {__file__}',
-                                   walltime='02:00:00')
+                                   walltime='01:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
                                roles=['my_network'],
@@ -40,15 +42,20 @@ conf.add_network_conf(network)\
                  cluster=CLUSTER,
                  nodes=1,
                  primary_network=network)\
+    .add_machine(roles=['working'],
+                 cluster=CLUSTER,
+                 nodes=3,
+                 primary_network=network)\
     .finalize()
-                 
+
 
 
 SEED = 1
 NB_QUERY = 1500
 EXPORT_TRACES_FILE = Path('../../results/result_scale_1_s{}.json'.format(SEED))
 
-boxes = Boxes(depth=6, arity=2, kind=BoxesType.BALANCED)
+# boxes = Boxes(depth=6, arity=2, kind=BoxesType.BALANCED)
+boxes = Boxes(depth=3, arity=2, kind=BoxesType.BALANCED)
 boxes.print()
 longestTimeOfLongest = boxes.getMaxTime()
 logging.debug(f"Longest possible task takes {longestTimeOfLongest}ms.")
@@ -91,39 +98,6 @@ with play_on(pattern_hosts='collector', roles=roles) as p:
 front_address = roles['front'][0].extra['my_network_ip']
 jaeger_address = roles['collector'][0].extra['my_network_ip']
 
-envoy_path = '../envoy/front_envoy.yaml'
-with Path(envoy_path).open('r') as f:
-    document = yaml.load(f, Loader=yaml.FullLoader)
-
-document['static_resources']['clusters'][0]\
-    ['hosts']['socket_address']['address'] = front_address
-document['static_resources']['clusters'][1]\
-    ['hosts']['socket_address']['address'] = jaeger_address ## (TODO) fix, does not seem to work
-
-with Path(envoy_path).open('w') as f:
-    yaml.dump(document, f)
-
-with play_on(pattern_hosts='front', roles=roles) as p:
-    p.copy(
-        display_name= 'Copying files to build envoy…',
-        src='../envoy',
-        dest='/tmp/',
-    )
-    p.docker_image(
-        display_name='Building front envoy image…',
-        path= '/tmp/envoy/',
-        name='front-envoy',
-        nocache=True,
-    )
-    p.docker_container(
-        display_name='Installing front envoy…',
-        name='envoy',
-        image='front-envoy:latest',
-        detach=True, network_mode='host', state='started',
-        recreate=True,
-        published_ports=['80:80'],
-    )
-
 ## #C deploy working boxes
 with play_on(pattern_hosts='working', roles=roles) as p:
     p.docker_image(
@@ -138,12 +112,49 @@ with play_on(pattern_hosts='working', roles=roles) as p:
 i = 0
 workings = roles['working']
 boxNameToAddress = {}
+boxNameToIPV4 = {}
+
+box = boxes.boxes.pop(0)
+with play_on(pattern_hosts=roles['front'][0], roles = roles) as p:
+    box_address = _get_address(workings[i%len(workings)])
+    boxNameToAddress[box.SPRING_APPLICATION_NAME] = box_address
+    boxNameToIPV4[box.SPRING_APPLICATION_NAME] = _get_address(workings[i%len(workings)], 'my_network')
+    i = i + 1
+    p.docker_container(
+        display_name=f'Installing box {box.SPRING_APPLICATION_NAME} service…',
+        name=f'{box.SPRING_APPLICATION_NAME}', ## be careful with uniqu names
+        image='working-box:latest',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=[f'{box.SERVER_PORT}:{box.SERVER_PORT}'],
+        env={
+            'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
+            'SPRING_APPLICATION_NAME': f'{box.SPRING_APPLICATION_NAME}',
+            'SERVER_PORT': f'{box.SERVER_PORT}',
+            'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
+            'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
+            'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
+            f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
+	    'BOX_ENERGY_MAX_LOCAL_DATA':
+            f'{box.BOX_ENERGY_MAX_LOCAL_DATA}',
+	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED':
+            f'{box.BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED}',
+        },
+    )
+    p.wait_for(
+        display_name=f'Waiting for box {box.SPRING_APPLICATION_NAME} to be ready…',
+        host='localhost', port=f'{box.SERVER_PORT}', state='started',
+        delay=2, timeout=120,
+    )
+    
+
 for box in reversed(boxes.boxes):
     with play_on(pattern_hosts=
                  _get_address(workings[i%len(workings)]),
                  roles=roles) as p:
         box_address = _get_address(workings[i%len(workings)])
         boxNameToAddress[box.SPRING_APPLICATION_NAME] = box_address
+        boxNameToIPV4[box.SPRING_APPLICATION_NAME] = _get_address(workings[i%len(workings)], 'my_network')
         i = i + 1
         p.docker_container(
             display_name=f'Installing box {box.SPRING_APPLICATION_NAME} service…',
@@ -171,8 +182,45 @@ for box in reversed(boxes.boxes):
             host='localhost', port=f'{box.SERVER_PORT}', state='started',
             delay=2, timeout=120,
         )
-        
-        
+
+
+envoy_path = '../envoy/front_envoy.yaml'
+with Path(envoy_path).open('r') as f:
+    document = yaml.load(f, Loader=yaml.FullLoader)
+
+document['static_resources']['clusters'][0]\
+    ['hosts']['socket_address']['address'] = boxNameToIPV4[boxes.entryPoint.SPRING_APPLICATION_NAME]
+document['static_resources']['clusters'][1]\
+    ['hosts']['socket_address']['address'] = jaeger_address ## (TODO) fix, does not seem to work
+
+with Path(envoy_path).open('w') as f:
+    yaml.dump(document, f)
+
+with play_on(pattern_hosts='front', roles=roles) as p:
+    p.copy(
+        display_name= 'Copying files to build envoy…',
+        src='../envoy',
+        dest='/tmp/',
+    )
+    p.docker_image(
+        display_name='Building front envoy image…',
+        path= '/tmp/envoy/',
+        name='front-envoy',
+        nocache=True,
+    )
+    p.docker_container(
+        display_name='Installing front envoy…',
+        name='envoy',
+        image='front-envoy:latest',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=['80:80'],
+    )
+
+
+
+time.sleep(10)
+               
 
 
 ## Generate traces

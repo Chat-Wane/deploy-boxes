@@ -9,22 +9,21 @@ from pygnuplot import gnuplot
 
 
 
-TRACES_FILES = [Path('result_convergence_3_s11.json'),
-                Path('result_convergence_3_s12.json'),
-                Path('result_convergence_3_s13.json'),
-                Path('result_convergence_3_s14.json'),
-                Path('result_convergence_3_s15.json'),]
-TRACES_FILES_B = [Path('result_fairness_1_s1.json'),
-                  Path('result_fairness_1_s2.json'),
-                  Path('result_fairness_1_s3.json'),
-                  Path('result_fairness_1_s4.json'),
-                  Path('result_fairness_1_s5.json'),]                
-TRACES_FILES_C = [Path('result_fairness_2_s1.json'),
-                  Path('result_fairness_2_s2.json'),
-                  Path('result_fairness_2_s3.json'),
-                  Path('result_fairness_2_s4.json'),
-                  Path('result_fairness_2_s5.json'),]
-
+TRACES_FILES = [[Path('result_convergence_3_s11.json'),
+                 Path('result_convergence_3_s12.json'),
+                 Path('result_convergence_3_s13.json'),
+                 Path('result_convergence_3_s14.json'),
+                 Path('result_convergence_3_s15.json'),],
+                [Path('result_fairness_1_s1.json'),
+                 Path('result_fairness_1_s2.json'),
+                 Path('result_fairness_1_s3.json'),
+                 Path('result_fairness_1_s4.json'),
+                 Path('result_fairness_1_s5.json'),],
+                [Path('result_fairness_2_s1.json'),
+                 Path('result_fairness_2_s2.json'),
+                 Path('result_fairness_2_s3.json'),
+                 Path('result_fairness_2_s4.json'),
+                 Path('result_fairness_2_s5.json'),]]
 PLOT = True
 
 
@@ -96,50 +95,39 @@ def getVariancesOf (traces_files):
             
 
 
-varCosts, errors = getVariancesOf(TRACES_FILES)
-print("Done with first set of files")
-varCostsB, errorsB = getVariancesOf(TRACES_FILES_B)
-print("Done with second set of files")
-varCostsC, errorsC = getVariancesOf(TRACES_FILES_C)
-print("Done with third set of files")
+results = []
+i = 1
+for setOfTraces in TRACES_FILES:
+    results.append(getVariancesOf(setOfTraces))
+    print (f"Done with set of files {i}…")
+    i = i + 1
 
 
 
 groupBy = 15
 j = 0
+groupedResults = [(0, 0) for pair in results]
 
 with Path(__file__+'.dat').open('w') as f:
-    f.write(f"#f=0 var\t err \t f=0.1 var\t err \t f=0.4 var \t err ({len(varCosts)})\n")
-    for i in range(0, min([len(varCosts), len(varCostsB),len(varCostsC)])):
+    f.write(f'#pairs of (variance of costs, error)\n')
+    for i in range(0, min([len(pair[0]) for pair in results])):
         if j >= groupBy:
-            f.write(f"{sVarCosts}\t{sumErrors/j}\t{sVarCostsB}\t{sumErrorsB/j}\t{sVarCostsC}\t{sumErrorsC/j}\n")
+            for pair in groupedResults:
+                f.write(f'{pair[0]/j}\t{pair[1]/j}\t')
+            f.write('\n')            
             j = 0
 
         if j == 0:
-            sVarCosts = 0
-            sVarCostsB = 0
-            sVarCostsC = 0
-            sumVarCosts = 0
-            sumVarCostsB = 0
-            sumVarCostsC = 0
-            sumErrors = 0
-            sumErrorsB = 0
-            sumErrorsC = 0
+            groupedResults = [(0, 0) for pair in results]
 
-        sVarCosts = sVarCosts + varCosts[i] / groupBy
-        sVarCostsB = sVarCostsB + varCostsB[i] / groupBy
-        sVarCostsC = sVarCostsC + varCostsC[i] / groupBy
-        sumVarCosts = sumVarCosts + varCosts[i]
-        sumVarCostsB = sumVarCostsB + varCostsB[i]
-        sumVarCostsC = sumVarCostsC + varCostsC[i]
-        sumErrors = sumErrors + errors[i]
-        sumErrorsB = sumErrorsB + errorsB[i]
-        sumErrorsC = sumErrorsC + errorsC[i]
-
+        for k in range(0, len(results)):
+            groupedResults[k] = (groupedResults[k][0] + results[k][0][i],
+                                 groupedResults[k][1] + results[k][1][i])
+        
         j = j + 1
         
     # if j > 5:
-    #     f.write(f"{sumVarCosts/j}\t{sumErrors/j}\t{sumVarCostsB/j}\t{sumErrorsB/j}\t{sumVarCostsC/j}\t{sumErrorsC/j}\n")
+    #     f.write(f"{sumVarCosts/j}\t{sumErrors/j}\t{sumVarCostsB/j}\t{sumErrorsB/j}\t{sumVarCostsC/j}\t{sumErrorsC/j}\t{sumVarCostsD/j}\t{sumErrorsD/j}\n")
 
 
 
@@ -167,13 +155,13 @@ w linespoint pt 6 lt rgb "forest-green", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($4)/1000 t "f=0.1" \
 w linespoint pt 2 lt rgb "web-blue", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($2)/1000 t "f=0.0" \
-w linespoint pt 1 lt rgb "orange"')
+w linespoint pt 1 lt rgb "orange" \
+')
 
 
-
-g.cmd('set ylabel "standard deviation"',
-      'set yrange [0:650]',
-      'set format y "%3.0f"')
+g.cmd('set ylabel "standard deviation (x10^3)"',
+      'set yrange [0:1.1]',
+      'set format y "%.1f"')
 g.cmd('set xtics format',
       'set xlabel "#execution"')
 
@@ -182,12 +170,14 @@ g.cmd('set tmargin 0.0',
 
 g.cmd('set key left bottom')
 
-g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($1) t "f=0.0" \
+g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($1)/1000 t "f=0.0" \
 w linespoint lt rgb "orange", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($3) t "f=0.1" \
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($3)/1000 t "f=0.1" \
  w linespoint lt rgb "web-blue", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5) t "f=0.4"\
- w linespoint pt 6 lt rgb "forest-green"')
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5)/1000 t "f=0.4"\
+ w linespoint pt 6 lt rgb "forest-green" \
+')
+
 
 
 print (f"Plotted into file {__file__}.eps")
