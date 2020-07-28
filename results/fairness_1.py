@@ -19,6 +19,11 @@ TRACES_FILES = [[Path('result_convergence_3_s11.json'),
                  Path('result_fairness_1_s3.json'),
                  Path('result_fairness_1_s4.json'),
                  Path('result_fairness_1_s5.json'),],
+                [Path('result_fairness_1b_s1.json'),
+                 Path('result_fairness_1b_s2.json'),
+                 Path('result_fairness_1b_s3.json'),
+                 Path('result_fairness_1b_s4.json'),
+                 Path('result_fairness_1b_s5.json'),],
                 [Path('result_fairness_2_s1.json'),
                  Path('result_fairness_2_s2.json'),
                  Path('result_fairness_2_s3.json'),
@@ -150,9 +155,9 @@ g.cmd('set ylabel "error (second)"',
 
 g.cmd('set bmargin 0.75')
 
-g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($6)/1000 t "f=0.4" \
+g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($8)/1000 t "f=0.4" \
 w linespoint pt 6 lt rgb "forest-green", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($4)/1000 t "f=0.1" \
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($6)/1000 t "f=0.2" \
 w linespoint pt 2 lt rgb "web-blue", \
 "{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($2)/1000 t "f=0.0" \
 w linespoint pt 1 lt rgb "orange" \
@@ -172,9 +177,9 @@ g.cmd('set key left bottom')
 
 g.plot(f'"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($1)/1000 t "f=0.0" \
 w linespoint lt rgb "orange", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($3)/1000 t "f=0.1" \
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5)/1000 t "f=0.2" \
  w linespoint lt rgb "web-blue", \
-"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($5)/1000 t "f=0.4"\
+"{__file__}.dat" u ($0)*{groupBy}+{groupBy}/2:($7)/1000 t "f=0.4"\
  w linespoint pt 6 lt rgb "forest-green" \
 ')
 

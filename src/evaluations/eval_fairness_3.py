@@ -23,10 +23,7 @@ from boxes import Boxes, BoxesType
 ## Experiment on a small unbalanced tree of working-boxes with small
 ## parameters. Inputs are differents for microservices. Assuming
 ## inputs: small in [51 100], medium in [201 250], and high in [351
-## 400]. Two services have small and medium. Two services have medium
-## and high. One service has small, medium, and high. Fairness factor
-## is 0.0, so we expect higher variance compared to setup where all
-## services have the same inputs. 
+## 400]. We add two other functioning mode above these.
 
 
 
@@ -49,7 +46,7 @@ conf.add_network_conf(network)\
                  
 
 
-SEED = 3
+SEED = 5
 NB_QUERY = 1500
 FAIRNESS = 0.0
 EXPORT_TRACES_FILE = Path(f'../../results/result_fairness_3_s{SEED}.json')
