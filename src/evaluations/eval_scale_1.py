@@ -32,7 +32,7 @@ SITE = "nantes"
 
 conf = Configuration.from_settings(job_type='allow_classic_ssh',
                                    job_name=f'working-boxes {__file__}',
-                                   walltime='01:00:00')
+                                   walltime='02:00:00')
 network = NetworkConfiguration(id='n1',
                                type='prod',
                                roles=['my_network'],
@@ -54,8 +54,8 @@ SEED = 1
 NB_QUERY = 1500
 EXPORT_TRACES_FILE = Path('../../results/result_scale_1_s{}.json'.format(SEED))
 
-# boxes = Boxes(depth=6, arity=2, kind=BoxesType.BALANCED)
-boxes = Boxes(depth=3, arity=2, kind=BoxesType.BALANCED)
+boxes = Boxes(depth=6, arity=2, kind=BoxesType.BALANCED)
+# boxes = Boxes(depth=3, arity=2, kind=BoxesType.BALANCED)
 boxes.print()
 longestTimeOfLongest = boxes.getMaxTime()
 logging.debug(f"Longest possible task takes {longestTimeOfLongest}ms.")
@@ -113,41 +113,7 @@ i = 0
 workings = roles['working']
 boxNameToAddress = {}
 boxNameToIPV4 = {}
-
-box = boxes.boxes.pop(0)
-with play_on(pattern_hosts=roles['front'][0], roles = roles) as p:
-    box_address = _get_address(workings[i%len(workings)])
-    boxNameToAddress[box.SPRING_APPLICATION_NAME] = box_address
-    boxNameToIPV4[box.SPRING_APPLICATION_NAME] = _get_address(workings[i%len(workings)], 'my_network')
-    i = i + 1
-    p.docker_container(
-        display_name=f'Installing box {box.SPRING_APPLICATION_NAME} service…',
-        name=f'{box.SPRING_APPLICATION_NAME}', ## be careful with uniqu names
-        image='working-box:latest',
-        detach=True, network_mode='host', state='started',
-        recreate=True,
-        published_ports=[f'{box.SERVER_PORT}:{box.SERVER_PORT}'],
-        env={
-            'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
-            'SPRING_APPLICATION_NAME': f'{box.SPRING_APPLICATION_NAME}',
-            'SERVER_PORT': f'{box.SERVER_PORT}',
-            'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
-            'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
-            'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
-            f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
-	    'BOX_ENERGY_MAX_LOCAL_DATA':
-            f'{box.BOX_ENERGY_MAX_LOCAL_DATA}',
-	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED':
-            f'{box.BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED}',
-        },
-    )
-    p.wait_for(
-        display_name=f'Waiting for box {box.SPRING_APPLICATION_NAME} to be ready…',
-        host='localhost', port=f'{box.SERVER_PORT}', state='started',
-        delay=2, timeout=120,
-    )
-    
-
+boxes.boxes.pop(0) ## remove box-8080 which is the front-end
 for box in reversed(boxes.boxes):
     with play_on(pattern_hosts=
                  _get_address(workings[i%len(workings)]),
@@ -182,6 +148,43 @@ for box in reversed(boxes.boxes):
             host='localhost', port=f'{box.SERVER_PORT}', state='started',
             delay=2, timeout=120,
         )
+
+
+box = boxes.entryPoint
+with play_on(pattern_hosts='front', roles = roles) as p:
+    box_address = front_address
+    boxNameToAddress[box.SPRING_APPLICATION_NAME] = box_address
+    boxNameToIPV4[box.SPRING_APPLICATION_NAME] = front_address
+    i = i + 1
+    p.docker_container(
+        display_name=f'Installing box {box.SPRING_APPLICATION_NAME} service…',
+        name=f'{box.SPRING_APPLICATION_NAME}', ## be careful with uniqu names
+        image='working-box:latest',
+        detach=True, network_mode='host', state='started',
+        recreate=True,
+        published_ports=[f'{box.SERVER_PORT}:{box.SERVER_PORT}'],
+        env={
+            'JAEGER_ENDPOINT': f'http://{jaeger_address}:14268/api/traces',
+            'SPRING_APPLICATION_NAME': f'{box.SPRING_APPLICATION_NAME}',
+            'SERVER_PORT': f'{box.SERVER_PORT}',
+            'BOX_POLYNOMES_COEFFICIENTS': f'{box.POLYNOME()}',
+            'BOX_REMOTE_CALLS': f'{box.REMOTE_CALLS(boxNameToAddress)}',
+            'BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS':
+            f'{box.BOX_ENERGY_THRESHOLD_BEFORE_SELF_TUNING_ARGS}',
+	    'BOX_ENERGY_MAX_LOCAL_DATA':
+            f'{box.BOX_ENERGY_MAX_LOCAL_DATA}',
+	    'BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED':
+            f'{box.BOX_ENERGY_FACTOR_LOCALDATAKEPT_DIFFERENTDATAMONITORED}',
+        },
+    )
+    p.wait_for(
+        display_name=f'Waiting for box {box.SPRING_APPLICATION_NAME} to be ready…',
+        host='localhost', port=f'{box.SERVER_PORT}', state='started',
+        delay=2, timeout=120,
+    )
+    
+
+
 
 
 envoy_path = '../envoy/front_envoy.yaml'
@@ -266,7 +269,14 @@ for i in range(0, NB_QUERY):
 
 
 
+print ("Pausing to let the last workflows end properly…")
+time.sleep(30)
+
+
+
 ## Export file of traces
+
+print ("Calling jaeger endpoint to retrieve traces…")
 
 ## 2*NB_QUERY because of getIntervalEnergy now
 URL = f'http://{jaeger_address}:16686/api/traces?service={boxes.entryPoint.SPRING_APPLICATION_NAME}&limit={2*NB_QUERY}'
