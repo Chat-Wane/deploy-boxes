@@ -6,9 +6,13 @@ from pygnuplot import gnuplot
 
 
 
-TRACES_FILES = [Path('result_scale_1_s1.json'),]
+TRACES_FILES = [[Path('result_scale_1_s1.json'),],
+                [Path('result_scale_2_s1.json'),],
+                [Path('result_scale_3_s1.json'),],
+                [Path('result_scale_4_s1.json'),]]
+
 PLOT = True
-READ = False
+READ = [False, False, False, False]
 
 
 
@@ -77,31 +81,30 @@ def getKeptsErrorsRewrittens (traces_files):
                         sumOfKept = sumOfKept + kept
                     
                                     
-                    if i >= len(errors):
-                        errors.append(0)
-                        rewrittens.append(0)
-                        kepts.append(0)
+                if i >= len(errors):
+                    errors.append(0)
+                    rewrittens.append(0)
+                    kepts.append(0)
 
-                    kepts[i] = kepts[i] + sumOfKept/len(traces_files)/sumOfSpan
-                    rewrittens[i] = rewrittens[i] + \
-                        sumOfRewritten/len(traces_files)/sumOfSpan
-                    errors[i] = errors[i] + \
-                        abs(sumOfCosts - globalObjective)/len(traces_files)
-                    i = i + 1
+                kepts[i] = kepts[i] + sumOfKept/len(traces_files)/sumOfSpan
+                rewrittens[i] = rewrittens[i] + \
+                    sumOfRewritten/len(traces_files)/sumOfSpan
+                errors[i] = errors[i] + \
+                    abs(sumOfCosts - globalObjective)/len(traces_files)
+                i = i + 1
+
 
     return (kepts, errors, rewrittens)
 
 
 
-if READ:
-    kepts, errors, rewrittens = getKeptsErrorsRewrittens(TRACES_FILES)
-
-
+def readJsonWriteDat (traces_files, i):
+    kepts, errors, rewrittens = getKeptsErrorsRewrittens(traces_files)
 
     groupBy = 10
     j = 0
 
-    with Path(__file__+'.dat').open('w') as f:
+    with Path(__file__+'_'+str(i)+'.dat').open('w') as f:
         f.write(f"#error\trewritten\tkept ({len(errors)})\n")
         for i in range(0, len(errors)):
             if j >= groupBy:
@@ -121,6 +124,12 @@ if READ:
 
 
 
+for shouldRead in range(0, len(READ)):
+    if READ[shouldRead] : 
+        readJsonWriteDat(TRACES_FILES[shouldRead], shouldRead)
+    
+
+
 if not PLOT:
     print ("No output plot file…")
     sys.exit(0)
@@ -130,7 +139,7 @@ g = gnuplot.Gnuplot(log = True,
                term = 'postscript eps color blacktext "Helvetica" 20',
                multiplot = 'layout 2, 1 spacing 0.5,0.5')
 
-g.cmd('set ylabel "time (second)"',
+g.cmd('set ylabel "error (second)"',
       'set format y "%.1f"')
 # g.c('set yrange [0:1]')
 
@@ -143,7 +152,12 @@ g.cmd('set bmargin 0.75')
 # g.cmd('set arrow 1 from 550,0 to 550,5.5 nohead dt "." lc "black"',
 #       'set arrow 2 from 650,0 to 650,5.5 nohead dt "." lc "black"')
 
-g.plot(f'"{__file__}.dat" u ($0)*10+5:($1)/1000 t "error: |objective - cost|" w linespoints lt rgb "orange"')
+g.plot(f'\
+"{__file__}_0.dat" u ($0)*10+5:($1)/1000 t "127 services" w linespoints lt rgb "orange", \
+"{__file__}_1.dat" u ($0)*10+5:($1)/1000 t "63 services" w linespoints lt rgb "web-blue", \
+"{__file__}_2.dat" u ($0)*10+5:($1)/1000 t "31 services" w linespoints lt rgb "forest-green", \
+"{__file__}_3.dat" u ($0)*10+5:($1)/1000 t "15 services" w linespoints lt rgb "purple" \
+')
 
 g.cmd('set tmargin 0.0',
       'set bmargin')
@@ -155,15 +169,24 @@ g.cmd('set ylabel "metric over |services|"',
       'set yrange [0:1]',
       'set format y "  %.1f"')
 
-g.cmd('set key right bottom')
+g.cmd('set key right center')
 
 # g.cmd('set arrow 1 from 550,0 to 550,1',
 #       'set arrow 2 from 650,0 to 650,1')
 # g.cmd('set arrow from 550,0.35 to 650,0.35 heads',
-#       'set label at 600,0.42 center "-1 service"')
+g.cmd('set label at 1475,0.9 right "self-tuning ratio"',
+      'set label at 1475,0.1 right "local data kept ratio"')
 
 
-g.plot(f'"{__file__}.dat" u ($0)*10+5:($2) t "self-tuning ratio" w linespoints,\
-"{__file__}.dat" u ($0)*10+5:($3) t "local data kept ratio" w linespoints')
+g.plot(f'\
+"{__file__}_0.dat" u ($0)*10+5:($2) t "127 services" w linespoints lt rgb "orange",\
+"{__file__}_0.dat" u ($0)*10+5:($3) notitle w linespoints pt 1 lt rgb "orange",\
+"{__file__}_1.dat" u ($0)*10+5:($2) t "63 services" w linespoints pt 2 lt rgb "web-blue",\
+"{__file__}_1.dat" u ($0)*10+5:($3) notitle w linespoints pt 2 lt rgb "web-blue",\
+"{__file__}_2.dat" u ($0)*10+5:($2) t "31 services" w linespoints pt 3 lt rgb "forest-green",\
+"{__file__}_2.dat" u ($0)*10+5:($3) notitle w linespoints pt 3 lt rgb "forest-green",\
+"{__file__}_3.dat" u ($0)*10+5:($2) t "15 services" w linespoints pt 4 lt rgb "purple", \
+"{__file__}_3.dat" u ($0)*10+5:($3) notitle w linespoints pt 4 lt rgb "purple" \
+')
 
 print (f"Plotted into file {__file__}.eps")
