@@ -25,9 +25,24 @@ fairness trade-off, and scalability.
 
 ```
 $ cd ./src/evaluations
-$ python3 <name_of_the_eval_file>
+$ python3 <name_of_the_eval_file>.py
 ```
 
 In a web browser, connect to ```<collector_ip>:16686``` to look at
 traces; and ```<collector_ip>:3000``` to look at energy monitoring
 data per container.
+
+
+## Results
+
+Results of executions are already in directory ```results``` except
+for larger scale experiments where the size of the file is too large
+for Github.
+
+```
+$ cd ./results/
+$ python3 ./<name_of_the_result_python_file>.py
+```
+
+This should create additional files containing data easily printable
+by [gnuplot](http://www.gnuplot.info/).
