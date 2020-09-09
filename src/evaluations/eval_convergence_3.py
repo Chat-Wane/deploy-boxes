@@ -21,7 +21,8 @@ from box import Box
 from boxes import Boxes, BoxesType
 
 ## Experiment on a small unbalanced tree of working-boxes with small
-## parameters
+## parameters. We expect a quick convergence towards a state where
+## boxes accurately reach the global objective set at each execution. 
 
 
 

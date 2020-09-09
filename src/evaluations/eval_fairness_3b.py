@@ -23,7 +23,9 @@ from boxes import Boxes, BoxesType
 ## Experiment on a small unbalanced tree of working-boxes with small
 ## parameters. Inputs are differents for microservices. Assuming
 ## inputs: small in [51 100], medium in [201 250], and high in [351
-## 400]. We add two other modes of functioning above.
+## 400]. We add two other modes of functioning above. This aims at
+## highlighting the application-dependent trade-off of fairness.
+## Here, fairness factor is 0.2 .
 
 
 

@@ -21,8 +21,10 @@ from box import Box
 from boxes import Boxes, BoxesType
 
 ## Experiment on a small unbalanced tree of working-boxes with small
-## parameters. Compared to other eval_fairness, this one have a higher
-## fairness factor set to 0.4.
+## parameters. Boxes get more possibility to distribute objectives to
+## other boxes and keep the ones with lowest variance. In turns, there
+## is a trade-off between accuracy and fairness. Here, the fairness
+## factor is 0.4 . This is the highest factor of all experiments.
 
 
 

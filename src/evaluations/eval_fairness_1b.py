@@ -20,8 +20,14 @@ from utils import _get_address
 from box import Box
 from boxes import Boxes, BoxesType
 
+
 ## Experiment on a small unbalanced tree of working-boxes with small
-## parameters
+## parameters. Boxes get more possibility to distribute objectives to
+## other boxes and keep the ones with lowest variance. In turns, there
+## is a trade-off between accuracy and fairness. Here, the fairness
+## factor is 0.2 .
+
+
 
 
 

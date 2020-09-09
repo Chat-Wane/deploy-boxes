@@ -22,8 +22,8 @@ from utils import _get_address
 from box import Box
 from boxes import Boxes, BoxesType
 
-## Experiment on a small unbalanced tree of working-boxes with small
-## parameters
+## Experiment on a large balanced tree of working-boxes with small
+## parameters. It includes 63 boxes so deployments may take a while.
 
 
 

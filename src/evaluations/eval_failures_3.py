@@ -21,7 +21,9 @@ from box import Box
 from boxes import Boxes, BoxesType
 
 ## Experiment on a small unbalanced tree of working-boxes with small
-## parameters
+## parameters. Some boxes are voluntarily stopped at given time. We
+## still expect a convergence, for boxes are independent. Crash of
+## ones do not impact the well-functioning of others. 
 
 
 
